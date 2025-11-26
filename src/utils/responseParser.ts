@@ -33,30 +33,39 @@ export function parseBatchedPersonaResponse(
   let postImpact = DEFAULT_POST_IMPACT
 
   try {
-    // Try to extract JSON - handle both object wrapper and direct array
     let responses: any[] = []
-    let parsed: any = null
 
-    // Try parsing as JSON array first
-    const arrayMatch = content.match(/\[[\s\S]*\]/)
+    // Try parsing as complete object FIRST (preferred format with postImpact)
     const objectMatch = content.match(/\{[\s\S]*\}/)
-
-    if (arrayMatch) {
+    if (objectMatch) {
       try {
-        responses = JSON.parse(arrayMatch[0])
+        const parsed = JSON.parse(objectMatch[0])
+        // Check if it has responses array (wrapper format)
+        if (parsed.responses && Array.isArray(parsed.responses)) {
+          responses = parsed.responses
+          // Extract postImpact from wrapper
+          if (parsed.postImpact) {
+            postImpact = parsePostImpact(parsed.postImpact)
+          }
+        } else if (parsed.reaction) {
+          // Single response object
+          responses = [parsed]
+        }
       } catch {
-        // Not a direct array, try object wrapper
+        // Object parse failed, try array fallback
       }
     }
 
-    if (responses.length === 0 && objectMatch) {
-      parsed = JSON.parse(objectMatch[0])
-      responses = parsed.responses || [parsed]
-    }
-
-    // Extract postImpact if present
-    if (parsed && parsed.postImpact) {
-      postImpact = parsePostImpact(parsed.postImpact)
+    // Fallback to direct array if no responses found yet
+    if (responses.length === 0) {
+      const arrayMatch = content.match(/\[[\s\S]*\]/)
+      if (arrayMatch) {
+        try {
+          responses = JSON.parse(arrayMatch[0])
+        } catch {
+          // Array parse also failed
+        }
+      }
     }
 
     // Process responses - try to match by personaId or by position

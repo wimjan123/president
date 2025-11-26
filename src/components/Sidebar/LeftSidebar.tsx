@@ -2,21 +2,42 @@ import { useGameStore } from '../../stores/gameStore'
 import { ISSUE_LABELS, type Issue } from '../../types'
 
 export function LeftSidebar() {
-  const { player, rival, getPlayerFavorability, getRivalFavorability, personas } = useGameStore()
+  const { player, rival, posts, news, getPlayerFavorability, getRivalFavorability, personas } = useGameStore()
 
   const playerFav = getPlayerFavorability()
   const rivalFav = getRivalFavorability()
 
-  // Calculate issue importance based on personas
-  const getIssueBreakdown = (): { issue: Issue; count: number }[] => {
+  // Calculate trending issues based on recent posts and news (dynamic)
+  const getTrendingIssues = (): { issue: Issue; count: number }[] => {
     const counts: Partial<Record<Issue, number>> = {}
 
-    personas.forEach((persona) => {
-      persona.priorityIssues.forEach((issue, index) => {
-        const weight = 3 - index // First issue = 3 points, second = 2, third = 1
-        counts[issue] = (counts[issue] || 0) + weight
+    // Weight recent posts (newer = higher weight)
+    posts.slice(0, 20).forEach((post, index) => {
+      const recencyWeight = Math.max(1, 20 - index)
+      const engagementWeight = 1 + (post.reactions.length / 5)
+
+      post.issueTags.forEach((issue) => {
+        counts[issue] = (counts[issue] || 0) + recencyWeight * engagementWeight
       })
     })
+
+    // Also include news events
+    news.slice(0, 5).forEach((item, index) => {
+      const recencyWeight = Math.max(1, 5 - index)
+      item.affectedIssues.forEach((issue) => {
+        counts[issue as Issue] = (counts[issue as Issue] || 0) + recencyWeight * 2
+      })
+    })
+
+    // If no posts/news yet, show persona priorities as fallback
+    if (Object.keys(counts).length === 0) {
+      personas.forEach((persona) => {
+        persona.priorityIssues.forEach((issue, index) => {
+          const weight = 3 - index
+          counts[issue] = (counts[issue] || 0) + weight
+        })
+      })
+    }
 
     return Object.entries(counts)
       .map(([issue, count]) => ({ issue: issue as Issue, count }))
@@ -24,7 +45,7 @@ export function LeftSidebar() {
       .slice(0, 5)
   }
 
-  const topIssues = getIssueBreakdown()
+  const topIssues = getTrendingIssues()
   const maxIssueCount = topIssues[0]?.count || 1
 
   return (
