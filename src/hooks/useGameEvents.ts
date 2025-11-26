@@ -8,12 +8,6 @@ import { buildNewsGenerationPrompt, buildRivalPostPrompt } from '../utils/prompt
 import { parseNewsResponse, parseRivalResponse } from '../utils/responseParser'
 import type { Post, NewsItem, Issue } from '../types'
 
-// News every 60-90 seconds, Rival posts every 90-120 seconds
-const NEWS_MIN_INTERVAL = 60
-const NEWS_MAX_INTERVAL = 90
-const RIVAL_MIN_INTERVAL = 90
-const RIVAL_MAX_INTERVAL = 120
-
 export function useGameEvents() {
   const {
     player,
@@ -27,7 +21,11 @@ export function useGameEvents() {
     getRivalFavorability,
   } = useGameStore()
 
-  const { mockMode } = useSettingsStore()
+  const {
+    mockMode,
+    rivalName,
+    rivalHandle,
+  } = useSettingsStore()
   const { isPaused, addToast } = useUIStore()
   const { queueRequest } = useOpenRouter()
   const { generateResponses } = usePersonaResponses()
@@ -39,14 +37,18 @@ export function useGameEvents() {
   // Schedule next news event (reads tick from store to avoid stale closure)
   const scheduleNextNews = useCallback(() => {
     const currentTick = useGameStore.getState().loop.currentTick
-    const delay = NEWS_MIN_INTERVAL + Math.floor(Math.random() * (NEWS_MAX_INTERVAL - NEWS_MIN_INTERVAL + 1))
+    const minInt = useSettingsStore.getState().newsMinInterval
+    const maxInt = useSettingsStore.getState().newsMaxInterval
+    const delay = minInt + Math.floor(Math.random() * (maxInt - minInt + 1))
     nextNewsTick.current = currentTick + delay
   }, [])
 
   // Schedule next rival post (reads tick from store to avoid stale closure)
   const scheduleNextRival = useCallback(() => {
     const currentTick = useGameStore.getState().loop.currentTick
-    const delay = RIVAL_MIN_INTERVAL + Math.floor(Math.random() * (RIVAL_MAX_INTERVAL - RIVAL_MIN_INTERVAL + 1))
+    const minInt = useSettingsStore.getState().rivalMinInterval
+    const maxInt = useSettingsStore.getState().rivalMaxInterval
+    const delay = minInt + Math.floor(Math.random() * (maxInt - minInt + 1))
     nextRivalTick.current = currentTick + delay
   }, [])
 
@@ -208,8 +210,8 @@ export function useGameEvents() {
         id: `post-rival-${Date.now()}`,
         type: 'rival',
         author: {
-          name: rival.name,
-          handle: rival.handle,
+          name: rivalName,
+          handle: rivalHandle,
           avatarSeed: rival.avatarSeed,
         },
         content: mock.content,
@@ -232,7 +234,7 @@ export function useGameEvents() {
       const recentNews = news.slice(0, 3).map((n) => n.headline)
       const prompt = buildRivalPostPrompt(
         player,
-        rival,
+        { ...rival, name: rivalName, handle: rivalHandle },
         getPlayerFavorability(),
         getRivalFavorability(),
         posts.filter((p) => p.type === 'player').slice(0, 3),
@@ -252,8 +254,8 @@ export function useGameEvents() {
             id: `post-rival-${Date.now()}`,
             type: 'rival',
             author: {
-              name: rival.name,
-              handle: rival.handle,
+              name: rivalName,
+              handle: rivalHandle,
               avatarSeed: rival.avatarSeed,
             },
             content: parsed.content,
@@ -276,6 +278,8 @@ export function useGameEvents() {
     player,
     rival,
     mockMode,
+    rivalName,
+    rivalHandle,
     loop.currentTick,
     posts,
     news,

@@ -9,9 +9,27 @@ export function SettingsPanel() {
     apiKey,
     selectedModel,
     mockMode,
+    rivalName,
+    rivalHandle,
+    newsMinInterval,
+    newsMaxInterval,
+    rivalMinInterval,
+    rivalMaxInterval,
+    minResponders,
+    maxResponders,
+    responseSpeedMultiplier,
     setApiKey,
     setSelectedModel,
     setMockMode,
+    setRivalName,
+    setRivalHandle,
+    setNewsMinInterval,
+    setNewsMaxInterval,
+    setRivalMinInterval,
+    setRivalMaxInterval,
+    setMinResponders,
+    setMaxResponders,
+    setResponseSpeedMultiplier,
     hasValidApiKey,
   } = useSettingsStore()
 
@@ -299,6 +317,191 @@ export function SettingsPanel() {
                   }`}
                 />
               </button>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-white/[0.06]" />
+
+          {/* Rival Character Section */}
+          <div>
+            <h3 className="text-sm font-display font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">
+              Rival Character
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-[var(--text-muted)] mb-1">
+                  Opponent Name
+                </label>
+                <input
+                  type="text"
+                  value={rivalName}
+                  onChange={(e) => setRivalName(e.target.value)}
+                  placeholder="Senator Patricia Morgan"
+                  className="input"
+                  maxLength={50}
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-[var(--text-muted)] mb-1">
+                  Opponent Handle
+                </label>
+                <input
+                  type="text"
+                  value={rivalHandle}
+                  onChange={(e) => setRivalHandle(e.target.value)}
+                  placeholder="@SenMorgan"
+                  className="input"
+                  maxLength={20}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-white/[0.06]" />
+
+          {/* Game Timing Section */}
+          <div>
+            <h3 className="text-sm font-display font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">
+              Game Timing
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-[var(--text-muted)]">News Frequency</span>
+                  <span className="text-[var(--text-primary)] font-mono">{newsMinInterval}-{newsMaxInterval}s</span>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <span className="text-xs text-[var(--text-muted)]">Min</span>
+                  <input
+                    type="range"
+                    min={30}
+                    max={180}
+                    value={newsMinInterval}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value)
+                      setNewsMinInterval(val)
+                      if (val > newsMaxInterval) setNewsMaxInterval(val)
+                    }}
+                    className="flex-1 accent-cyan"
+                  />
+                  <span className="text-xs text-[var(--text-muted)]">Max</span>
+                  <input
+                    type="range"
+                    min={30}
+                    max={180}
+                    value={newsMaxInterval}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value)
+                      setNewsMaxInterval(val)
+                      if (val < newsMinInterval) setNewsMinInterval(val)
+                    }}
+                    className="flex-1 accent-cyan"
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-[var(--text-muted)]">Rival Post Frequency</span>
+                  <span className="text-[var(--text-primary)] font-mono">{rivalMinInterval}-{rivalMaxInterval}s</span>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <span className="text-xs text-[var(--text-muted)]">Min</span>
+                  <input
+                    type="range"
+                    min={60}
+                    max={240}
+                    value={rivalMinInterval}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value)
+                      setRivalMinInterval(val)
+                      if (val > rivalMaxInterval) setRivalMaxInterval(val)
+                    }}
+                    className="flex-1 accent-rival"
+                  />
+                  <span className="text-xs text-[var(--text-muted)]">Max</span>
+                  <input
+                    type="range"
+                    min={60}
+                    max={240}
+                    value={rivalMaxInterval}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value)
+                      setRivalMaxInterval(val)
+                      if (val < rivalMinInterval) setRivalMinInterval(val)
+                    }}
+                    className="flex-1 accent-rival"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-white/[0.06]" />
+
+          {/* Difficulty Section */}
+          <div>
+            <h3 className="text-sm font-display font-bold text-[var(--text-secondary)] uppercase tracking-wide mb-4">
+              Difficulty
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-[var(--text-muted)]">Responders per Post</span>
+                  <span className="text-[var(--text-primary)] font-mono">{minResponders}-{maxResponders}</span>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <span className="text-xs text-[var(--text-muted)]">Min</span>
+                  <input
+                    type="range"
+                    min={1}
+                    max={15}
+                    value={minResponders}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value)
+                      setMinResponders(val)
+                      if (val > maxResponders) setMaxResponders(val)
+                    }}
+                    className="flex-1 accent-gold"
+                  />
+                  <span className="text-xs text-[var(--text-muted)]">Max</span>
+                  <input
+                    type="range"
+                    min={1}
+                    max={15}
+                    value={maxResponders}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value)
+                      setMaxResponders(val)
+                      if (val < minResponders) setMinResponders(val)
+                    }}
+                    className="flex-1 accent-gold"
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-[var(--text-muted)]">Response Speed</span>
+                  <span className="text-[var(--text-primary)] font-mono">
+                    {responseSpeedMultiplier < 0.8 ? 'Fast' : responseSpeedMultiplier > 1.2 ? 'Slow' : 'Normal'}
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0.5}
+                  max={2.0}
+                  step={0.1}
+                  value={responseSpeedMultiplier}
+                  onChange={(e) => setResponseSpeedMultiplier(parseFloat(e.target.value))}
+                  className="w-full accent-gold"
+                />
+                <div className="flex justify-between text-xs text-[var(--text-muted)] mt-1">
+                  <span>Fast</span>
+                  <span>Slow</span>
+                </div>
+              </div>
             </div>
           </div>
 

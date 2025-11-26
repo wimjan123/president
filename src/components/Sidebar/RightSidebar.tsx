@@ -4,7 +4,7 @@ import { useSettingsStore } from '../../stores/settingsStore'
 
 export function RightSidebar() {
   const { rival, totalTokensUsed, totalCost } = useGameStore()
-  const { hasValidApiKey, mockMode } = useSettingsStore()
+  const { hasValidApiKey, mockMode, rivalName, rivalHandle, rivalMinInterval, rivalMaxInterval } = useSettingsStore()
 
   return (
     <div className="space-y-6">
@@ -19,16 +19,16 @@ export function RightSidebar() {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-rival/20 border border-rival/30 flex items-center justify-center">
             <span className="text-sm font-display font-bold text-rival">
-              {rival.name.charAt(0)}
+              {rivalName.charAt(0)}
             </span>
           </div>
           <div>
-            <p className="text-sm font-medium text-[var(--text-primary)]">{rival.name}</p>
-            <p className="text-xs text-[var(--text-muted)]">{rival.handle}</p>
+            <p className="text-sm font-medium text-[var(--text-primary)]">{rivalName}</p>
+            <p className="text-xs text-[var(--text-muted)]">{rivalHandle}</p>
           </div>
         </div>
         <p className="text-xs text-[var(--text-muted)] mt-3">
-          {rival.party} candidate. Posts every 90-120 seconds.
+          {rival.party} candidate. Posts every {rivalMinInterval}-{rivalMaxInterval}s.
         </p>
       </div>
 

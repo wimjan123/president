@@ -1,20 +1,11 @@
 import { useCallback } from 'react'
 import { useGameStore } from '../stores/gameStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import { useOpenRouter } from './useOpenRouter'
 import { buildBatchedPersonaResponsePrompt } from '../utils/prompts'
 import { parseBatchedPersonaResponse } from '../utils/responseParser'
 import { calculateAllEngagement, scaleEngagement } from '../utils/engagementCalculator'
 import type { Persona, Post, PostReaction, Issue, PostEngagement } from '../types'
-
-interface PersonaSelectionConfig {
-  minResponders: number
-  maxResponders: number
-}
-
-const DEFAULT_CONFIG: PersonaSelectionConfig = {
-  minResponders: 5,
-  maxResponders: 10,
-}
 
 export function usePersonaResponses() {
   const {
@@ -28,6 +19,11 @@ export function usePersonaResponses() {
     updateFollowers,
     updatePostEngagement,
   } = useGameStore()
+  const {
+    minResponders,
+    maxResponders,
+    responseSpeedMultiplier,
+  } = useSettingsStore()
   const { queueRequest } = useOpenRouter()
 
   // Calculate how relevant a post is to a persona based on issue overlap
@@ -54,7 +50,7 @@ export function usePersonaResponses() {
 
   // Select which personas will respond to a post
   const selectRespondingPersonas = useCallback(
-    (post: Post, config: PersonaSelectionConfig = DEFAULT_CONFIG): Persona[] => {
+    (post: Post): Persona[] => {
       const personaArray = Array.from(personas.values())
 
       // Safety: if no personas loaded, return empty
@@ -100,7 +96,7 @@ export function usePersonaResponses() {
 
       // Select personas based on probability
       const selected: Persona[] = []
-      const targetCount = config.minResponders + Math.floor(Math.random() * (config.maxResponders - config.minResponders + 1))
+      const targetCount = minResponders + Math.floor(Math.random() * (maxResponders - minResponders + 1))
 
       for (const item of withProbability) {
         if (selected.length >= targetCount) break
@@ -111,17 +107,17 @@ export function usePersonaResponses() {
       }
 
       // Ensure minimum responders
-      if (selected.length < config.minResponders) {
+      if (selected.length < minResponders) {
         const remaining = withProbability
           .filter((item) => !selected.includes(item.persona))
-          .slice(0, config.minResponders - selected.length)
+          .slice(0, minResponders - selected.length)
 
         remaining.forEach((item) => selected.push(item.persona))
       }
 
       // Final safety net: if still below minimum, force-add top personas by probability
-      if (selected.length < config.minResponders && withProbability.length > 0) {
-        const stillNeeded = config.minResponders - selected.length
+      if (selected.length < minResponders && withProbability.length > 0) {
+        const stillNeeded = minResponders - selected.length
         const toForceAdd = withProbability
           .filter((item) => !selected.includes(item.persona))
           .slice(0, stillNeeded)
@@ -130,13 +126,13 @@ export function usePersonaResponses() {
 
       return selected
     },
-    [personas, player, calculateTopicRelevance, calculateFatigue]
+    [personas, player, minResponders, maxResponders, calculateTopicRelevance, calculateFatigue]
   )
 
   // Calculate display delay based on wave and randomness
   const calculateDisplayDelay = useCallback(
     (persona: Persona, index: number): number => {
-      // Wave timing:
+      // Wave timing (base values, modified by speed multiplier):
       // Wave 1 (0-5s): responseWave === 1
       // Wave 2 (5-20s): responseWave === 2
       // Wave 3 (20-45s): responseWave === 3
@@ -166,9 +162,11 @@ export function usePersonaResponses() {
       // Add small index-based offset to prevent clumping
       const indexOffset = index * 0.5
 
-      return Math.round(baseDelay + randomOffset + indexOffset)
+      // Apply speed multiplier (lower = faster, higher = slower)
+      const rawDelay = baseDelay + randomOffset + indexOffset
+      return Math.round(rawDelay * responseSpeedMultiplier)
     },
-    []
+    [responseSpeedMultiplier]
   )
 
   // Generate responses for a post (batched - single API call for all personas)

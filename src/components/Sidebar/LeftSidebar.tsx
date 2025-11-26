@@ -1,8 +1,10 @@
 import { useGameStore } from '../../stores/gameStore'
+import { useSettingsStore } from '../../stores/settingsStore'
 import { ISSUE_LABELS, type Issue } from '../../types'
 
 export function LeftSidebar() {
-  const { player, rival, posts, news, getPlayerFavorability, getRivalFavorability, personas } = useGameStore()
+  const { player, posts, news, getPlayerFavorability, getRivalFavorability, personas } = useGameStore()
+  const { rivalName } = useSettingsStore()
 
   const playerFav = getPlayerFavorability()
   const rivalFav = getRivalFavorability()
@@ -73,7 +75,7 @@ export function LeftSidebar() {
         {/* Rival */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-[var(--text-primary)]">{rival.name}</span>
+            <span className="text-sm text-[var(--text-primary)]">{rivalName}</span>
             <span className="font-mono text-lg font-medium text-rival">{rivalFav}%</span>
           </div>
           <div className="h-2 bg-overlay rounded-full overflow-hidden">

@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useGameStore } from '../../stores/gameStore'
+import { useSettingsStore } from '../../stores/settingsStore'
 import { useUIStore } from '../../stores/uiStore'
 import { ISSUES, ISSUE_LABELS, type Issue, type Party, type PlayerData } from '../../types'
 
 export function PlayerSetup() {
   const { initializeGame } = useGameStore()
+  const { rivalName } = useSettingsStore()
   const { openModal } = useUIStore()
 
   const [candidateName, setCandidateName] = useState('')
@@ -179,7 +181,7 @@ export function PlayerSetup() {
 
         {/* Footer */}
         <p className="text-center text-sm text-[var(--text-muted)] mt-6">
-          Your opponent will be Senator Patricia Morgan from the opposing party
+          Your opponent will be {rivalName} from the opposing party
         </p>
       </div>
     </div>

@@ -192,6 +192,18 @@ export interface Settings {
   selectedModel: string
   mockMode: boolean
   tickSpeed: number // ms per tick
+  // Rival customization
+  rivalName: string
+  rivalHandle: string
+  // Game timing (in seconds)
+  newsMinInterval: number
+  newsMaxInterval: number
+  rivalMinInterval: number
+  rivalMaxInterval: number
+  // Difficulty
+  minResponders: number
+  maxResponders: number
+  responseSpeedMultiplier: number // 0.5 = faster, 2.0 = slower
 }
 
 // === UI STATE TYPES ===
