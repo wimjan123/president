@@ -54,14 +54,26 @@ export function SettingsPanel() {
     setTestingConnection(true)
 
     try {
-      const response = await fetch('https://openrouter.ai/api/v1/models', {
+      // Use the auth/key endpoint to validate the API key
+      const response = await fetch('https://openrouter.ai/api/v1/auth/key', {
         headers: {
           Authorization: `Bearer ${apiKey}`,
         },
       })
 
       if (response.ok) {
-        addToast({ type: 'success', message: 'API connection successful!', duration: 3000 })
+        const data = await response.json()
+        const credits = data.data?.limit_remaining
+        const message = credits !== undefined
+          ? `API key valid! Credits: $${(credits / 100).toFixed(2)}`
+          : 'API key valid!'
+        addToast({ type: 'success', message, duration: 3000 })
+      } else if (response.status === 401) {
+        addToast({
+          type: 'error',
+          message: 'Invalid API key',
+          duration: 5000,
+        })
       } else {
         addToast({
           type: 'error',
@@ -72,7 +84,7 @@ export function SettingsPanel() {
     } catch (error) {
       addToast({
         type: 'error',
-        message: 'Failed to connect. Check your API key.',
+        message: 'Failed to connect. Check your network.',
         duration: 5000,
       })
     } finally {
