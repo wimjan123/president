@@ -2,13 +2,12 @@ import { useCallback, useRef } from 'react'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useUIStore } from '../stores/uiStore'
 import { useGameStore } from '../stores/gameStore'
-import type { LLMRequest, LLMResponse, PersonaLLMResponse } from '../types'
+import type { LLMRequest, LLMResponse } from '../types'
 import { getMockResponse } from '../utils/mockResponses'
-import { parsePersonaResponse } from '../utils/responseParser'
 
 interface QueueItem {
   request: LLMRequest
-  resolve: (response: LLMResponse) => void
+  resolve: (response: LLMResponse<string>) => void
   reject: (error: Error) => void
 }
 
@@ -23,7 +22,7 @@ export function useOpenRouter() {
   const queueRef = useRef<QueueItem[]>([])
   const activeCallsRef = useRef<number>(0)
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map())
-  const executeCallRef = useRef<(request: LLMRequest) => Promise<LLMResponse>>()
+  const executeCallRef = useRef<(request: LLMRequest) => Promise<LLMResponse<string>>>()
 
   const processQueue = useCallback(async () => {
     while (queueRef.current.length > 0 && activeCallsRef.current < MAX_CONCURRENT_CALLS) {
@@ -49,7 +48,7 @@ export function useOpenRouter() {
   }, [])
 
   const executeCall = useCallback(
-    async (request: LLMRequest): Promise<LLMResponse> => {
+    async (request: LLMRequest): Promise<LLMResponse<string>> => {
       // Mock mode - return fake response
       if (mockMode) {
         return getMockResponse(request)
@@ -110,18 +109,16 @@ export function useOpenRouter() {
           throw new Error('Empty response from API')
         }
 
-        // Parse the response based on request type
-        const parsed = parsePersonaResponse(content)
-
         // Track usage
         const tokensUsed = data.usage?.total_tokens || 0
         const costEstimate = estimateCost(data.usage, selectedModel)
         addTokenUsage(tokensUsed, costEstimate)
 
+        // Return raw content - let callers parse based on request type
         return {
           requestId: request.id,
           success: true,
-          data: parsed,
+          data: content,
           tokensUsed,
           costEstimate,
         }
@@ -159,7 +156,7 @@ export function useOpenRouter() {
   const queueRequest = useCallback(
     (
       request: Omit<LLMRequest, 'id' | 'retryCount' | 'createdAt'>
-    ): Promise<LLMResponse<PersonaLLMResponse>> => {
+    ): Promise<LLMResponse<string>> => {
       return new Promise((resolve, reject) => {
         const fullRequest: LLMRequest = {
           ...request,
@@ -170,7 +167,7 @@ export function useOpenRouter() {
 
         queueRef.current.push({
           request: fullRequest,
-          resolve: resolve as (response: LLMResponse) => void,
+          resolve: resolve as (response: LLMResponse<string>) => void,
           reject,
         })
 

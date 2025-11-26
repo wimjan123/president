@@ -2,7 +2,8 @@ import { useCallback } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { useOpenRouter } from './useOpenRouter'
 import { buildPersonaResponsePrompt } from '../utils/prompts'
-import type { Persona, Post, PostReaction, PersonaLLMResponse, Issue } from '../types'
+import { parsePersonaResponse } from '../utils/responseParser'
+import type { Persona, Post, PostReaction, Issue } from '../types'
 
 interface PersonaSelectionConfig {
   minResponders: number
@@ -165,7 +166,8 @@ export function usePersonaResponses() {
           })
 
           if (response.success && response.data) {
-            const data = response.data as PersonaLLMResponse
+            // Parse raw content into PersonaLLMResponse
+            const data = parsePersonaResponse(response.data)
 
             // Calculate display delay
             const displayDelay = calculateDisplayDelay(persona, index)

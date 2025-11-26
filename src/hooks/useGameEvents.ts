@@ -128,8 +128,7 @@ export function useGameEvents() {
       })
 
       if (response.success && response.data) {
-        const content = typeof response.data === 'string' ? response.data : JSON.stringify(response.data)
-        const parsed = parseNewsResponse(content)
+        const parsed = parseNewsResponse(response.data)
 
         if (parsed) {
           const newsItem: NewsItem = {
@@ -235,8 +234,7 @@ export function useGameEvents() {
       })
 
       if (response.success && response.data) {
-        const content = typeof response.data === 'string' ? response.data : JSON.stringify(response.data)
-        const parsed = parseRivalResponse(content)
+        const parsed = parseRivalResponse(response.data)
 
         if (parsed) {
           const rivalPost: Post = {
