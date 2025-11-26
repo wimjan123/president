@@ -11,33 +11,31 @@ export function LeftSidebar() {
   const getTrendingIssues = (): { issue: Issue; count: number }[] => {
     const counts: Partial<Record<Issue, number>> = {}
 
-    // Weight recent posts (newer = higher weight)
+    // Start with persona priorities as baseline (always have something)
+    personas.forEach((persona) => {
+      persona.priorityIssues.forEach((issue, index) => {
+        const weight = 3 - index
+        counts[issue] = (counts[issue] || 0) + weight
+      })
+    })
+
+    // Boost based on recent posts (newer = higher boost)
     posts.slice(0, 20).forEach((post, index) => {
       const recencyWeight = Math.max(1, 20 - index)
       const engagementWeight = 1 + (post.reactions.length / 5)
 
       post.issueTags.forEach((issue) => {
-        counts[issue] = (counts[issue] || 0) + recencyWeight * engagementWeight
+        counts[issue] = (counts[issue] || 0) + recencyWeight * engagementWeight * 2
       })
     })
 
-    // Also include news events
+    // Also boost from news events
     news.slice(0, 5).forEach((item, index) => {
       const recencyWeight = Math.max(1, 5 - index)
       item.affectedIssues.forEach((issue) => {
-        counts[issue as Issue] = (counts[issue as Issue] || 0) + recencyWeight * 2
+        counts[issue as Issue] = (counts[issue as Issue] || 0) + recencyWeight * 3
       })
     })
-
-    // If no posts/news yet, show persona priorities as fallback
-    if (Object.keys(counts).length === 0) {
-      personas.forEach((persona) => {
-        persona.priorityIssues.forEach((issue, index) => {
-          const weight = 3 - index
-          counts[issue] = (counts[issue] || 0) + weight
-        })
-      })
-    }
 
     return Object.entries(counts)
       .map(([issue, count]) => ({ issue: issue as Issue, count }))

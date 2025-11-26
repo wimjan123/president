@@ -3,6 +3,7 @@ import { useGameStore } from '../stores/gameStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useUIStore } from '../stores/uiStore'
 import { useOpenRouter } from './useOpenRouter'
+import { usePersonaResponses } from './usePersonaResponses'
 import { buildNewsGenerationPrompt, buildRivalPostPrompt } from '../utils/prompts'
 import { parseNewsResponse, parseRivalResponse } from '../utils/responseParser'
 import type { Post, NewsItem, Issue } from '../types'
@@ -29,6 +30,7 @@ export function useGameEvents() {
   const { mockMode } = useSettingsStore()
   const { isPaused, addToast } = useUIStore()
   const { queueRequest } = useOpenRouter()
+  const { generateResponses } = usePersonaResponses()
 
   const nextNewsTick = useRef<number>(0)
   const nextRivalTick = useRef<number>(0)
@@ -104,11 +106,12 @@ export function useGameEvents() {
         issueTags: mock.issues,
         timestamp: loop.currentTick,
         reactions: [],
-        isProcessing: false,
+        isProcessing: true,
         engagement: { likes: 0, retweets: 0, dislikes: 0, displayedLikes: 0, displayedRetweets: 0, displayedDislikes: 0 },
       }
 
       addPost(newsPost)
+      generateResponses(newsPost)
       addToast({ type: 'info', message: 'Breaking News!', duration: 3000 })
 
       return
@@ -157,11 +160,12 @@ export function useGameEvents() {
             issueTags: parsed.affectedIssues as Issue[],
             timestamp: loop.currentTick,
             reactions: [],
-            isProcessing: false,
+            isProcessing: true,
             engagement: { likes: 0, retweets: 0, dislikes: 0, displayedLikes: 0, displayedRetweets: 0, displayedDislikes: 0 },
           }
 
           addPost(newsPost)
+          generateResponses(newsPost)
           addToast({ type: 'info', message: 'Breaking News!', duration: 3000 })
         }
       }
@@ -181,6 +185,7 @@ export function useGameEvents() {
     getPlayerFavorability,
     getRivalFavorability,
     getHotIssues,
+    generateResponses,
   ])
 
   // Generate rival post
@@ -211,11 +216,12 @@ export function useGameEvents() {
         issueTags: mock.issues,
         timestamp: loop.currentTick,
         reactions: [],
-        isProcessing: false,
+        isProcessing: true,
         engagement: { likes: 0, retweets: 0, dislikes: 0, displayedLikes: 0, displayedRetweets: 0, displayedDislikes: 0 },
       }
 
       addPost(rivalPost)
+      generateResponses(rivalPost)
       addToast({ type: 'warning', message: 'Your opponent just posted!', duration: 3000 })
 
       return
@@ -254,11 +260,12 @@ export function useGameEvents() {
             issueTags: parsed.issueTags as Issue[],
             timestamp: loop.currentTick,
             reactions: [],
-            isProcessing: false,
+            isProcessing: true,
             engagement: { likes: 0, retweets: 0, dislikes: 0, displayedLikes: 0, displayedRetweets: 0, displayedDislikes: 0 },
           }
 
           addPost(rivalPost)
+          generateResponses(rivalPost)
           addToast({ type: 'warning', message: 'Your opponent just posted!', duration: 3000 })
         }
       }
@@ -277,6 +284,7 @@ export function useGameEvents() {
     queueRequest,
     getPlayerFavorability,
     getRivalFavorability,
+    generateResponses,
   ])
 
   // Initialize scheduled events

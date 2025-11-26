@@ -175,8 +175,8 @@ export function parseNewsResponse(content: string): {
     if (!parsed.headline || !parsed.description) return null
 
     return {
-      headline: String(parsed.headline).slice(0, 100),
-      description: String(parsed.description).slice(0, 300),
+      headline: String(parsed.headline).slice(0, 200),
+      description: String(parsed.description).slice(0, 500),
       affectedIssues: Array.isArray(parsed.affectedIssues)
         ? parsed.affectedIssues.map(String).slice(0, 3)
         : [],
@@ -195,7 +195,7 @@ export function parseRivalResponse(content: string): {
     if (!jsonMatch) {
       // Use raw content as post
       return {
-        content: content.trim().slice(0, 280),
+        content: content.trim().slice(0, 500),
         issueTags: [],
       }
     }
@@ -203,14 +203,14 @@ export function parseRivalResponse(content: string): {
     const parsed = JSON.parse(jsonMatch[0])
 
     return {
-      content: String(parsed.content || content).slice(0, 280),
+      content: String(parsed.content || content).slice(0, 500),
       issueTags: Array.isArray(parsed.issueTags)
         ? parsed.issueTags.map(String).slice(0, 3)
         : [],
     }
   } catch {
     return {
-      content: content.trim().slice(0, 280),
+      content: content.trim().slice(0, 500),
       issueTags: [],
     }
   }
