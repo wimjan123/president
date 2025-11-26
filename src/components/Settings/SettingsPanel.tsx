@@ -236,7 +236,10 @@ export function SettingsPanel() {
               </div>
             ) : models.length === 0 ? (
               <div className="text-sm text-[var(--text-muted)] py-4 text-center">
-                Enter API key to load models
+                No models available.{' '}
+                <button onClick={refetch} className="text-player hover:underline">
+                  Retry
+                </button>
               </div>
             ) : (
               <div className="max-h-48 overflow-y-auto border border-white/10 rounded-lg">

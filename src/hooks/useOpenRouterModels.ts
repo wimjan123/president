@@ -10,7 +10,7 @@ interface UseOpenRouterModelsReturn {
 
 export function useOpenRouterModels(): UseOpenRouterModelsReturn {
   const [models, setModels] = useState<OpenRouterModel[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true) // Start loading immediately
   const [error, setError] = useState<string | null>(null)
 
   const fetchModels = useCallback(async () => {
