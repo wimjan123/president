@@ -176,7 +176,39 @@ export async function getMockResponse(request: LLMRequest): Promise<LLMResponse<
     }
   }
 
-  // Default: persona response
+  // Check if this is a batched persona request
+  if (request.type === 'persona_response' && request.prompt.includes('PERSONAS:')) {
+    // Extract persona IDs from prompt
+    const idMatches = request.prompt.match(/\[PERSONA \d+: ([a-z0-9-]+)\]/g) || []
+    const personaIds = idMatches.map(m => {
+      const match = m.match(/: ([a-z0-9-]+)\]/)
+      return match ? match[1] : ''
+    }).filter(Boolean)
+
+    const responses = personaIds.map(personaId => {
+      const template = MOCK_TEMPLATES[Math.floor(Math.random() * MOCK_TEMPLATES.length)]
+      const variation = (Math.random() - 0.5) * 4
+      const adjustedSentiment = Math.round(
+        Math.max(-10, Math.min(10, template.sentimentShift + variation))
+      )
+      return {
+        personaId,
+        reaction: template.reaction,
+        comment: template.comment,
+        sentimentShift: adjustedSentiment,
+      }
+    })
+
+    return {
+      requestId: request.id,
+      success: true,
+      data: JSON.stringify({ responses }),
+      tokensUsed: 100 + personaIds.length * 80,
+      costEstimate: 0.001,
+    }
+  }
+
+  // Default: single persona response
   const template = MOCK_TEMPLATES[Math.floor(Math.random() * MOCK_TEMPLATES.length)]
   const variation = (Math.random() - 0.5) * 4
   const adjustedSentiment = Math.round(

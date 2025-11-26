@@ -59,6 +59,80 @@ Respond ONLY with this exact JSON format:
 If your reaction is not "comment", set comment to null.`
 }
 
+export function buildBatchedPersonaResponsePrompt(
+  personas: Persona[],
+  post: Post,
+  player: PlayerData
+): string {
+  const personaDescriptions = personas.map((persona, index) => {
+    const leaningDesc = describePoliticalLeaning(persona.politicalLeaning)
+    const opinionDesc = describeOpinion(persona.opinionOfPlayer)
+    const issueNames = persona.priorityIssues.map((i) => ISSUE_LABELS[i]).join(', ')
+    const traits = persona.personalityTraits.join(', ')
+
+    const voiceNotes = []
+    if (persona.vocabularyLevel === 'simple') voiceNotes.push('uses simple language')
+    if (persona.vocabularyLevel === 'sophisticated') voiceNotes.push('uses educated vocabulary')
+    if (persona.formality === 'casual') voiceNotes.push('writes casually')
+    if (persona.formality === 'formal') voiceNotes.push('writes formally')
+    if (persona.usesSlang) voiceNotes.push('uses slang')
+    if (persona.usesEmoji) voiceNotes.push('uses emojis')
+
+    const exampleSection = persona.examplePosts.length > 0
+      ? `\n  Examples: ${persona.examplePosts.map(p => `"${p}"`).join(', ')}`
+      : ''
+
+    return `[PERSONA ${index + 1}: ${persona.id}]
+Name: ${persona.name}, ${persona.age}
+${persona.occupation} from ${persona.location}
+Political: ${leaningDesc} | Opinion of candidate: ${opinionDesc}
+Cares about: ${issueNames}
+Personality: ${traits}
+Voice: ${voiceNotes.join('; ')}${exampleSection}`
+  }).join('\n\n')
+
+  const issueTags = post.issueTags.length > 0
+    ? `Topics: ${post.issueTags.map(i => ISSUE_LABELS[i]).join(', ')}`
+    : ''
+
+  return `Simulate ${personas.length} distinct social media users responding to a political post.
+
+THE POST by ${player.candidateName} (${player.party}):
+"${post.content}"
+${issueTags}
+
+PERSONAS:
+${personaDescriptions}
+
+RESPONSE REQUIREMENTS:
+1. Each persona MUST respond differently based on their unique profile
+2. Vary comment LENGTH: simple vocabulary = shorter (1 sentence), sophisticated = longer (2-3 sentences)
+3. Vary TONE: conservatives sound different from liberals, skeptics from optimists
+4. Match their VOICE: casual personas use contractions/slang, formal ones don't
+5. Consider their OPINION: negative opinion = critical/dismissive, positive = supportive
+6. Some personas should NOT comment (use "like", "angry", "share", or "ignore" instead)
+
+BAD EXAMPLE (all sound the same):
+- Maya: "This is a great policy idea!"
+- Jerome: "This is a wonderful initiative!"
+- Betty: "This is an excellent proposal!"
+
+GOOD EXAMPLE (distinct voices):
+- Maya (grad student, liberal, uses emoji): "finally someone gets it!! climate action NOW"
+- Jerome (union worker, skeptical): "Talk is cheap. What's the actual plan here?"
+- Betty (retiree, formal, conservative): "I remain unconvinced. Where is the fiscal responsibility?"
+
+Return JSON:
+{
+  "responses": [
+    {"personaId": "id", "reaction": "comment|like|angry|laugh|share|ignore", "comment": "text matching their voice or null", "sentimentShift": -10 to +10},
+    ...
+  ]
+}
+
+Include ALL ${personas.length} personas. Each response must be unmistakably from that specific persona.`
+}
+
 export function buildNewsGenerationPrompt(
   player: PlayerData,
   rival: RivalData,

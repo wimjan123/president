@@ -82,7 +82,7 @@ export function useOpenRouter() {
             model: selectedModel,
             messages: [{ role: 'user', content: request.prompt }],
             temperature: 0.8,
-            max_tokens: 300,
+            max_tokens: 2000,
           }),
           signal: controller.signal,
         })

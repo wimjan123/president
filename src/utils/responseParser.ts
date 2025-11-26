@@ -2,6 +2,40 @@ import type { PersonaLLMResponse, ReactionType } from '../types'
 
 const VALID_REACTIONS: ReactionType[] = ['comment', 'like', 'angry', 'laugh', 'share', 'ignore']
 
+export function parseBatchedPersonaResponse(
+  content: string,
+  expectedPersonaIds: string[]
+): Map<string, PersonaLLMResponse> {
+  const results = new Map<string, PersonaLLMResponse>()
+
+  try {
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0])
+      const responses = parsed.responses || [parsed]
+
+      for (const resp of responses) {
+        if (!resp.personaId || !expectedPersonaIds.includes(resp.personaId)) continue
+
+        const reaction: ReactionType = VALID_REACTIONS.includes(resp.reaction)
+          ? resp.reaction
+          : 'comment'
+        let sentimentShift = Number(resp.sentimentShift) || 0
+        sentimentShift = Math.max(-10, Math.min(10, sentimentShift))
+        const comment = reaction === 'comment' && resp.comment
+          ? String(resp.comment).slice(0, 280)
+          : null
+
+        results.set(resp.personaId, { reaction, comment, sentimentShift })
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to parse batched persona response:', error)
+  }
+
+  return results
+}
+
 export function parsePersonaResponse(content: string): PersonaLLMResponse {
   try {
     // Try to extract JSON from the response

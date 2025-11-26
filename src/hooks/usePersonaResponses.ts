@@ -1,8 +1,8 @@
 import { useCallback } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { useOpenRouter } from './useOpenRouter'
-import { buildPersonaResponsePrompt } from '../utils/prompts'
-import { parsePersonaResponse } from '../utils/responseParser'
+import { buildBatchedPersonaResponsePrompt } from '../utils/prompts'
+import { parseBatchedPersonaResponse } from '../utils/responseParser'
 import type { Persona, Post, PostReaction, Issue } from '../types'
 
 interface PersonaSelectionConfig {
@@ -146,58 +146,60 @@ export function usePersonaResponses() {
     []
   )
 
-  // Generate responses for a post
+  // Generate responses for a post (batched - single API call for all personas)
   const generateResponses = useCallback(
     async (post: Post) => {
       if (!player) return
 
       // Select responding personas
       const respondingPersonas = selectRespondingPersonas(post)
+      const personaIds = respondingPersonas.map(p => p.id)
 
-      // Queue LLM calls for each persona
-      const responsePromises = respondingPersonas.map(async (persona, index) => {
-        try {
-          const prompt = buildPersonaResponsePrompt(persona, post, player)
+      // Single batched API call for all personas
+      const prompt = buildBatchedPersonaResponsePrompt(respondingPersonas, post, player)
 
-          const response = await queueRequest({
-            prompt,
-            personaId: persona.id,
-            type: 'persona_response',
-          })
+      try {
+        const response = await queueRequest({
+          prompt,
+          type: 'persona_response',
+        })
 
-          if (response.success && response.data) {
-            // Parse raw content into PersonaLLMResponse
-            const data = parsePersonaResponse(response.data)
+        if (response.success && response.data) {
+          // Parse batched response into Map<personaId, PersonaLLMResponse>
+          const responseMap = parseBatchedPersonaResponse(response.data, personaIds)
 
-            // Calculate display delay
-            const displayDelay = calculateDisplayDelay(persona, index)
-            const displayTick = loop.currentTick + displayDelay
+          // Process each persona's response
+          respondingPersonas.forEach((persona, index) => {
+            const data = responseMap.get(persona.id)
+            if (data) {
+              // Calculate display delay (wave-based timing preserved)
+              const displayDelay = calculateDisplayDelay(persona, index)
+              const displayTick = loop.currentTick + displayDelay
 
-            // Create reaction
-            const reaction: PostReaction = {
-              personaId: persona.id,
-              reactionType: data.reaction,
-              comment: data.comment,
-              sentimentShift: data.sentimentShift,
-              displayedAt: displayTick,
-              isDisplayed: false,
+              // Create reaction
+              const reaction: PostReaction = {
+                personaId: persona.id,
+                reactionType: data.reaction,
+                comment: data.comment,
+                sentimentShift: data.sentimentShift,
+                displayedAt: displayTick,
+                isDisplayed: false,
+              }
+
+              // Add reaction to post
+              addReactionToPost(post.id, reaction)
+
+              // Update persona opinion
+              updatePersonaOpinion(persona.id, data.sentimentShift)
+
+              // Mark last response time
+              setPersonaLastResponse(persona.id, loop.currentTick)
             }
-
-            // Add reaction to post
-            addReactionToPost(post.id, reaction)
-
-            // Update persona opinion
-            updatePersonaOpinion(persona.id, data.sentimentShift)
-
-            // Mark last response time
-            setPersonaLastResponse(persona.id, loop.currentTick)
-          }
-        } catch (error) {
-          console.error(`Failed to get response from ${persona.name}:`, error)
+          })
         }
-      })
-
-      await Promise.allSettled(responsePromises)
+      } catch (error) {
+        console.error('Batched persona response failed:', error)
+      }
 
       // Mark post as no longer processing
       setPostProcessing(post.id, false)
