@@ -9,28 +9,60 @@ export function parseBatchedPersonaResponse(
   const results = new Map<string, PersonaLLMResponse>()
 
   try {
-    const jsonMatch = content.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0])
-      const responses = parsed.responses || [parsed]
+    // Try to extract JSON - handle both object wrapper and direct array
+    let responses: any[] = []
 
-      for (const resp of responses) {
-        if (!resp.personaId || !expectedPersonaIds.includes(resp.personaId)) continue
+    // Try parsing as JSON array first
+    const arrayMatch = content.match(/\[[\s\S]*\]/)
+    const objectMatch = content.match(/\{[\s\S]*\}/)
 
-        const reaction: ReactionType = VALID_REACTIONS.includes(resp.reaction)
-          ? resp.reaction
-          : 'comment'
-        let sentimentShift = Number(resp.sentimentShift) || 0
-        sentimentShift = Math.max(-10, Math.min(10, sentimentShift))
-        const comment = reaction === 'comment' && resp.comment
-          ? String(resp.comment).slice(0, 280)
-          : null
-
-        results.set(resp.personaId, { reaction, comment, sentimentShift })
+    if (arrayMatch) {
+      try {
+        responses = JSON.parse(arrayMatch[0])
+      } catch {
+        // Not a direct array, try object wrapper
       }
     }
+
+    if (responses.length === 0 && objectMatch) {
+      const parsed = JSON.parse(objectMatch[0])
+      responses = parsed.responses || [parsed]
+    }
+
+    // Process responses - try to match by personaId or by position
+    for (let i = 0; i < responses.length; i++) {
+      const resp = responses[i]
+
+      // Try to find matching personaId
+      let personaId = resp.personaId || resp.persona_id || resp.id
+
+      // If no personaId or not in expected list, use position-based matching
+      if (!personaId || !expectedPersonaIds.includes(personaId)) {
+        if (i < expectedPersonaIds.length) {
+          personaId = expectedPersonaIds[i]
+        } else {
+          continue
+        }
+      }
+
+      const reaction: ReactionType = VALID_REACTIONS.includes(resp.reaction)
+        ? resp.reaction
+        : 'comment'
+      let sentimentShift = Number(resp.sentimentShift || resp.sentiment_shift || resp.sentiment) || 0
+      sentimentShift = Math.max(-10, Math.min(10, sentimentShift))
+      const comment = (reaction === 'comment' && (resp.comment || resp.text || resp.message))
+        ? String(resp.comment || resp.text || resp.message).slice(0, 280)
+        : null
+
+      results.set(personaId, { reaction, comment, sentimentShift })
+    }
+
+    // Debug logging
+    console.log('Parsed batched responses:', results.size, 'of', expectedPersonaIds.length)
+
   } catch (error) {
     console.warn('Failed to parse batched persona response:', error)
+    console.warn('Raw content:', content.substring(0, 500))
   }
 
   return results
