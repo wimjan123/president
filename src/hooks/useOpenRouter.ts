@@ -23,6 +23,7 @@ export function useOpenRouter() {
   const queueRef = useRef<QueueItem[]>([])
   const activeCallsRef = useRef<number>(0)
   const abortControllersRef = useRef<Map<string, AbortController>>(new Map())
+  const executeCallRef = useRef<(request: LLMRequest) => Promise<LLMResponse>>()
 
   const processQueue = useCallback(async () => {
     while (queueRef.current.length > 0 && activeCallsRef.current < MAX_CONCURRENT_CALLS) {
@@ -33,7 +34,8 @@ export function useOpenRouter() {
       incrementPendingResponses()
 
       try {
-        const response = await executeCall(item.request)
+        // Use ref to always get latest executeCall with current apiKey
+        const response = await executeCallRef.current!(item.request)
         item.resolve(response)
       } catch (error) {
         item.reject(error as Error)
@@ -150,6 +152,9 @@ export function useOpenRouter() {
     },
     [apiKey, selectedModel, mockMode, addTokenUsage, addToast]
   )
+
+  // Keep ref updated so processQueue always uses latest executeCall
+  executeCallRef.current = executeCall
 
   const queueRequest = useCallback(
     (
