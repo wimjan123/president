@@ -1,0 +1,17 @@
+services:
+  president-game:
+    build: .
+    container_name: president-game
+    restart: unless-stopped
+    networks:
+      - traefik_traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.president-game.rule=Host(`president.polibase.nl`)"
+      - "traefik.http.routers.president-game.entrypoints=websecure"
+      - "traefik.http.routers.president-game.tls.certresolver=letsencrypt"
+      - "traefik.http.services.president-game.loadbalancer.server.port=80"
+
+networks:
+  traefik_traefik-network:
+    external: true
