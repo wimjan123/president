@@ -53,6 +53,15 @@ export function useOpenRouter() {
         return getMockResponse(request)
       }
 
+      // Check API key before making call
+      if (!apiKey || apiKey.length < 10) {
+        return {
+          requestId: request.id,
+          success: false,
+          error: 'No API key configured. Go to Settings to add your OpenRouter API key.',
+        }
+      }
+
       // Real API call
       const controller = new AbortController()
       abortControllersRef.current.set(request.id, controller)
@@ -80,6 +89,15 @@ export function useOpenRouter() {
         clearTimeout(timeoutId)
 
         if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Invalid API key. Check your OpenRouter API key in Settings.')
+          }
+          if (response.status === 402) {
+            throw new Error('Insufficient credits. Add credits to your OpenRouter account.')
+          }
+          if (response.status === 429) {
+            throw new Error('Rate limited. Please wait a moment.')
+          }
           throw new Error(`API error: ${response.status} ${response.statusText}`)
         }
 
