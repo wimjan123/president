@@ -1,8 +1,9 @@
 import { useGameStore } from '../../stores/gameStore'
 import { useUIStore } from '../../stores/uiStore'
+import { formatNumber } from '../../utils/engagementCalculator'
 
 export function GameHeader() {
-  const { player, loop, getPlayerFavorability, getRivalFavorability } = useGameStore()
+  const { player, loop, followers, getPlayerFavorability, getRivalFavorability } = useGameStore()
   const { isPaused, togglePause, openModal } = useUIStore()
 
   const playerFav = getPlayerFavorability()
@@ -36,6 +37,14 @@ export function GameHeader() {
 
           {/* Quick Stats */}
           <div className="hidden sm:flex items-center gap-4 text-sm">
+            {/* Follower Count */}
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-[var(--text-muted)]" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+              </svg>
+              <span className="font-mono text-[var(--text-primary)] font-medium">{formatNumber(followers.total)}</span>
+            </div>
+            <div className="w-px h-4 bg-white/10" />
             <div className="flex items-center gap-2">
               <span className="text-[var(--text-muted)]">You:</span>
               <span className="font-mono text-player font-medium">{playerFav}%</span>

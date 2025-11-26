@@ -45,7 +45,7 @@ The candidate (${player.candidateName}, ${player.party}) just posted:
 ${post.issueTags.length > 0 ? `Topics tagged: ${post.issueTags.map((i) => ISSUE_LABELS[i]).join(', ')}` : ''}
 
 Respond as ${persona.name} would. Your response must be:
-- A reaction type: one of "comment", "like", "angry", "laugh", "share", or "ignore"
+- A reaction type: one of "comment", "like", "angry", "laugh", "retweet", or "ignore"
 - If comment: the actual comment text (1-3 sentences, casual social media style)
 - A sentiment score from -10 to +10 indicating how this interaction affected your opinion of the candidate
 
@@ -110,7 +110,7 @@ RESPONSE REQUIREMENTS:
 3. Vary TONE: conservatives sound different from liberals, skeptics from optimists
 4. Match their VOICE: casual personas use contractions/slang, formal ones don't
 5. Consider their OPINION: negative opinion = critical/dismissive, positive = supportive
-6. Some personas should NOT comment (use "like", "angry", "share", or "ignore" instead)
+6. Some personas should NOT comment (use "like", "angry", "retweet", or "ignore" instead)
 
 BAD EXAMPLE (all sound the same):
 - Maya: "This is a great policy idea!"
@@ -125,12 +125,18 @@ GOOD EXAMPLE (distinct voices):
 Return JSON:
 {
   "responses": [
-    {"personaId": "id", "reaction": "comment|like|angry|laugh|share|ignore", "comment": "text matching their voice or null", "sentimentShift": -10 to +10},
+    {"personaId": "id", "reaction": "comment|like|angry|laugh|retweet|ignore", "comment": "text matching their voice or null", "sentimentShift": -10 to +10},
     ...
-  ]
+  ],
+  "postImpact": {
+    "viralPotential": 0-100,
+    "followerTrend": "gaining|losing|stable",
+    "estimatedFollowerDelta": -10000 to +50000
+  }
 }
 
-Include ALL ${personas.length} personas. Each response must be unmistakably from that specific persona.`
+Include ALL ${personas.length} personas. Each response must be unmistakably from that specific persona.
+The postImpact assesses overall post quality: viralPotential (how shareable), followerTrend, and estimatedFollowerDelta (realistic change based on reactions).`
 }
 
 export function buildNewsGenerationPrompt(

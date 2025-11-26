@@ -1,16 +1,41 @@
-import type { PersonaLLMResponse, ReactionType } from '../types'
+import type { PersonaLLMResponse, ReactionType, PostImpact } from '../types'
 
-const VALID_REACTIONS: ReactionType[] = ['comment', 'like', 'angry', 'laugh', 'share', 'ignore']
+const VALID_REACTIONS: ReactionType[] = ['comment', 'like', 'angry', 'laugh', 'retweet', 'ignore']
+
+// Default post impact when not provided by LLM
+const DEFAULT_POST_IMPACT: PostImpact = {
+  viralPotential: 20,
+  followerTrend: 'stable',
+  estimatedFollowerDelta: 0,
+}
+
+function parsePostImpact(raw: any): PostImpact {
+  if (!raw || typeof raw !== 'object') return DEFAULT_POST_IMPACT
+
+  const viralPotential = Math.max(0, Math.min(100, Number(raw.viralPotential) || 20))
+  const validTrends = ['gaining', 'losing', 'stable'] as const
+  const followerTrend = validTrends.includes(raw.followerTrend) ? raw.followerTrend : 'stable'
+  const estimatedFollowerDelta = Math.max(-10000, Math.min(50000, Number(raw.estimatedFollowerDelta) || 0))
+
+  return { viralPotential, followerTrend, estimatedFollowerDelta }
+}
+
+export interface BatchedResponseResult {
+  responses: Map<string, PersonaLLMResponse>
+  postImpact: PostImpact
+}
 
 export function parseBatchedPersonaResponse(
   content: string,
   expectedPersonaIds: string[]
-): Map<string, PersonaLLMResponse> {
+): BatchedResponseResult {
   const results = new Map<string, PersonaLLMResponse>()
+  let postImpact = DEFAULT_POST_IMPACT
 
   try {
     // Try to extract JSON - handle both object wrapper and direct array
     let responses: any[] = []
+    let parsed: any = null
 
     // Try parsing as JSON array first
     const arrayMatch = content.match(/\[[\s\S]*\]/)
@@ -25,8 +50,13 @@ export function parseBatchedPersonaResponse(
     }
 
     if (responses.length === 0 && objectMatch) {
-      const parsed = JSON.parse(objectMatch[0])
+      parsed = JSON.parse(objectMatch[0])
       responses = parsed.responses || [parsed]
+    }
+
+    // Extract postImpact if present
+    if (parsed && parsed.postImpact) {
+      postImpact = parsePostImpact(parsed.postImpact)
     }
 
     // Process responses - try to match by personaId or by position
@@ -45,8 +75,12 @@ export function parseBatchedPersonaResponse(
         }
       }
 
-      const reaction: ReactionType = VALID_REACTIONS.includes(resp.reaction)
-        ? resp.reaction
+      // Handle 'share' as legacy alias for 'retweet'
+      let rawReaction = resp.reaction
+      if (rawReaction === 'share') rawReaction = 'retweet'
+
+      const reaction: ReactionType = VALID_REACTIONS.includes(rawReaction)
+        ? rawReaction
         : 'comment'
       let sentimentShift = Number(resp.sentimentShift || resp.sentiment_shift || resp.sentiment) || 0
       sentimentShift = Math.max(-10, Math.min(10, sentimentShift))
@@ -58,14 +92,14 @@ export function parseBatchedPersonaResponse(
     }
 
     // Debug logging
-    console.log('Parsed batched responses:', results.size, 'of', expectedPersonaIds.length)
+    console.log('Parsed batched responses:', results.size, 'of', expectedPersonaIds.length, 'postImpact:', postImpact)
 
   } catch (error) {
     console.warn('Failed to parse batched persona response:', error)
     console.warn('Raw content:', content.substring(0, 500))
   }
 
-  return results
+  return { responses: results, postImpact }
 }
 
 export function parsePersonaResponse(content: string): PersonaLLMResponse {
@@ -76,9 +110,13 @@ export function parsePersonaResponse(content: string): PersonaLLMResponse {
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0])
 
+      // Handle 'share' as legacy alias for 'retweet'
+      let rawReaction = parsed.reaction
+      if (rawReaction === 'share') rawReaction = 'retweet'
+
       // Validate reaction type
-      const reaction: ReactionType = VALID_REACTIONS.includes(parsed.reaction)
-        ? parsed.reaction
+      const reaction: ReactionType = VALID_REACTIONS.includes(rawReaction)
+        ? rawReaction
         : 'comment'
 
       // Validate sentiment shift (-10 to +10)

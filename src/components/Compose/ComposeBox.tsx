@@ -41,6 +41,14 @@ export function ComposeBox() {
       timestamp: loop.currentTick,
       reactions: [],
       isProcessing: true,
+      engagement: {
+        likes: 0,
+        retweets: 0,
+        dislikes: 0,
+        displayedLikes: 0,
+        displayedRetweets: 0,
+        displayedDislikes: 0,
+      },
     }
 
     addPost(post)

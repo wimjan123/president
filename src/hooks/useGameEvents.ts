@@ -34,17 +34,19 @@ export function useGameEvents() {
   const nextRivalTick = useRef<number>(0)
   const initialized = useRef(false)
 
-  // Schedule next news event
+  // Schedule next news event (reads tick from store to avoid stale closure)
   const scheduleNextNews = useCallback(() => {
+    const currentTick = useGameStore.getState().loop.currentTick
     const delay = NEWS_MIN_INTERVAL + Math.floor(Math.random() * (NEWS_MAX_INTERVAL - NEWS_MIN_INTERVAL + 1))
-    nextNewsTick.current = loop.currentTick + delay
-  }, [loop.currentTick])
+    nextNewsTick.current = currentTick + delay
+  }, [])
 
-  // Schedule next rival post
+  // Schedule next rival post (reads tick from store to avoid stale closure)
   const scheduleNextRival = useCallback(() => {
+    const currentTick = useGameStore.getState().loop.currentTick
     const delay = RIVAL_MIN_INTERVAL + Math.floor(Math.random() * (RIVAL_MAX_INTERVAL - RIVAL_MIN_INTERVAL + 1))
-    nextRivalTick.current = loop.currentTick + delay
-  }, [loop.currentTick])
+    nextRivalTick.current = currentTick + delay
+  }, [])
 
   // Get hot issues based on recent posts
   const getHotIssues = useCallback((): Issue[] => {
@@ -103,6 +105,7 @@ export function useGameEvents() {
         timestamp: loop.currentTick,
         reactions: [],
         isProcessing: false,
+        engagement: { likes: 0, retweets: 0, dislikes: 0, displayedLikes: 0, displayedRetweets: 0, displayedDislikes: 0 },
       }
 
       addPost(newsPost)
@@ -155,6 +158,7 @@ export function useGameEvents() {
             timestamp: loop.currentTick,
             reactions: [],
             isProcessing: false,
+            engagement: { likes: 0, retweets: 0, dislikes: 0, displayedLikes: 0, displayedRetweets: 0, displayedDislikes: 0 },
           }
 
           addPost(newsPost)
@@ -208,6 +212,7 @@ export function useGameEvents() {
         timestamp: loop.currentTick,
         reactions: [],
         isProcessing: false,
+        engagement: { likes: 0, retweets: 0, dislikes: 0, displayedLikes: 0, displayedRetweets: 0, displayedDislikes: 0 },
       }
 
       addPost(rivalPost)
@@ -250,6 +255,7 @@ export function useGameEvents() {
             timestamp: loop.currentTick,
             reactions: [],
             isProcessing: false,
+            engagement: { likes: 0, retweets: 0, dislikes: 0, displayedLikes: 0, displayedRetweets: 0, displayedDislikes: 0 },
           }
 
           addPost(rivalPost)
@@ -279,8 +285,10 @@ export function useGameEvents() {
 
     initialized.current = true
     scheduleNextNews()
-    scheduleNextRival()
-  }, [player, scheduleNextNews, scheduleNextRival])
+    // First rival post appears sooner (30-60s) to feel more alive
+    const currentTick = useGameStore.getState().loop.currentTick
+    nextRivalTick.current = currentTick + 30 + Math.floor(Math.random() * 30)
+  }, [player, scheduleNextNews])
 
   // Check for due events on each tick
   useEffect(() => {

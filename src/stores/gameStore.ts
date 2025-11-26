@@ -9,6 +9,7 @@ import type {
   PostReaction,
   NewsItem,
   ScheduledEvent,
+  PostEngagement,
 } from '../types'
 import { initialPersonas } from '../data/personas'
 
@@ -50,6 +51,12 @@ interface GameStoreState extends GameState {
   addTokenUsage: (tokens: number, cost: number) => void
   getPlayerFavorability: () => number
   getRivalFavorability: () => number
+
+  // Follower actions
+  updateFollowers: (delta: number, reason: string) => void
+
+  // Engagement actions
+  updatePostEngagement: (postId: string, engagement: PostEngagement) => void
 }
 
 function createInitialGameState(): GameState {
@@ -66,6 +73,10 @@ function createInitialGameState(): GameState {
     },
     totalTokensUsed: 0,
     totalCost: 0,
+    followers: {
+      total: 0,
+      history: [],
+    },
   }
 }
 
@@ -97,6 +108,10 @@ export const useGameStore = create<GameStoreState>()(
             },
             totalTokensUsed: 0,
             totalCost: 0,
+            followers: {
+              total: 0,
+              history: [],
+            },
           })
         },
 
@@ -257,6 +272,26 @@ export const useGameStore = create<GameStoreState>()(
           const avg = total / personas.size
           return Math.round(((avg + 100) / 200) * 100)
         },
+
+        updateFollowers: (delta, reason) => {
+          set((state) => ({
+            followers: {
+              total: Math.max(0, state.followers.total + delta),
+              history: [
+                { delta, reason, tick: state.loop.currentTick },
+                ...state.followers.history.slice(0, 49),
+              ],
+            },
+          }))
+        },
+
+        updatePostEngagement: (postId, engagement) => {
+          set((state) => ({
+            posts: state.posts.map((p) =>
+              p.id === postId ? { ...p, engagement } : p
+            ),
+          }))
+        },
       }),
       {
         name: 'president-game-state',
@@ -273,6 +308,7 @@ export const useGameStore = create<GameStoreState>()(
           },
           totalTokensUsed: state.totalTokensUsed,
           totalCost: state.totalCost,
+          followers: state.followers,
         }),
         merge: (persistedState, currentState) => {
           const persisted = persistedState as Partial<GameState & { personas: [string, Persona][] }>

@@ -80,6 +80,8 @@ export interface Persona {
   // Response behavior
   responseWave: ResponseWave
   lastResponseTick: number
+  // Demographic representation - how many voters this persona represents
+  segmentSize: number // 80K-400K based on political distribution
 }
 
 // === PLAYER TYPES ===
@@ -104,7 +106,20 @@ export interface RivalData {
 // === POST TYPES ===
 export type PostType = 'player' | 'rival' | 'news'
 
-export type ReactionType = 'comment' | 'like' | 'angry' | 'laugh' | 'share' | 'ignore'
+export type ReactionType = 'comment' | 'like' | 'angry' | 'laugh' | 'retweet' | 'ignore'
+
+// Engagement types for silent interactions (no LLM needed)
+export type EngagementType = 'like' | 'retweet' | 'dislike' | 'none'
+
+// Aggregate engagement for a post
+export interface PostEngagement {
+  likes: number          // Raw count from personas
+  retweets: number       // Raw count from personas
+  dislikes: number       // Raw count from personas
+  displayedLikes: number     // Scaled to realistic numbers
+  displayedRetweets: number
+  displayedDislikes: number
+}
 
 export interface PostReaction {
   personaId: string
@@ -128,6 +143,7 @@ export interface Post {
   timestamp: number // game tick
   reactions: PostReaction[]
   isProcessing: boolean
+  engagement: PostEngagement // Likes, retweets, dislikes from all personas
 }
 
 // === NEWS TYPES ===
@@ -212,6 +228,13 @@ export interface PersonaLLMResponse {
   sentimentShift: number
 }
 
+// LLM's assessment of post impact (for hybrid follower calculation)
+export interface PostImpact {
+  viralPotential: number // 0-100
+  followerTrend: 'gaining' | 'losing' | 'stable'
+  estimatedFollowerDelta: number // -10000 to +50000
+}
+
 export interface NewsLLMResponse {
   headline: string
   description: string
@@ -233,6 +256,18 @@ export interface LLMResponse<T = PersonaLLMResponse | NewsLLMResponse | RivalLLM
   costEstimate?: number
 }
 
+// === FOLLOWER TYPES ===
+export interface FollowerChange {
+  delta: number
+  reason: string
+  tick: number
+}
+
+export interface FollowerState {
+  total: number
+  history: FollowerChange[]
+}
+
 // === GAME STATE TYPES ===
 export interface GameState {
   player: PlayerData | null
@@ -243,6 +278,7 @@ export interface GameState {
   loop: GameLoopState
   totalTokensUsed: number
   totalCost: number
+  followers: FollowerState
 }
 
 // === UTILITY TYPES ===

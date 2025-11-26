@@ -24,7 +24,7 @@ const MOCK_TEMPLATES: MockTemplate[] = [
     sentimentShift: 2,
   },
   {
-    reaction: 'share',
+    reaction: 'retweet',
     comment: null,
     sentimentShift: 5,
   },
@@ -199,10 +199,26 @@ export async function getMockResponse(request: LLMRequest): Promise<LLMResponse<
       }
     })
 
+    // Calculate aggregate sentiment for postImpact
+    const totalSentiment = responses.reduce((sum, r) => sum + r.sentimentShift, 0)
+    const avgSentiment = totalSentiment / responses.length
+
+    // Generate mock postImpact based on aggregate sentiment
+    const viralPotential = Math.floor(30 + Math.random() * 40 + avgSentiment * 2)
+    const followerTrend = avgSentiment > 2 ? 'gaining' : avgSentiment < -2 ? 'losing' : 'stable'
+    const estimatedFollowerDelta = Math.round(avgSentiment * 500 + (Math.random() - 0.5) * 1000)
+
     return {
       requestId: request.id,
       success: true,
-      data: JSON.stringify({ responses }),
+      data: JSON.stringify({
+        responses,
+        postImpact: {
+          viralPotential: Math.max(0, Math.min(100, viralPotential)),
+          followerTrend,
+          estimatedFollowerDelta: Math.max(-10000, Math.min(50000, estimatedFollowerDelta)),
+        },
+      }),
       tokensUsed: 100 + personaIds.length * 80,
       costEstimate: 0.001,
     }

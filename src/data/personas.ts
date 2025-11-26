@@ -29,6 +29,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 1 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 120000,
   },
   {
     id: 'jerome-washington',
@@ -56,6 +57,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 1 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 100000,
   },
   {
     id: 'professor-elena-rodriguez',
@@ -83,6 +85,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 2 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 90000,
   },
   {
     id: 'sam-greenleaf',
@@ -110,6 +113,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 1 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 80000,
   },
   {
     id: 'diane-foster',
@@ -137,6 +141,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 2 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 110000,
   },
 
   // === CENTER-LEFT (-20 to -79) - 8 personas ===
@@ -166,6 +171,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 2 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 220000,
   },
   {
     id: 'lisa-tran',
@@ -193,6 +199,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 2 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 250000,
   },
   {
     id: 'marcus-johnson',
@@ -220,6 +227,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 3 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 280000,
   },
   {
     id: 'rachel-goldstein',
@@ -247,6 +255,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 1 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 180000,
   },
   {
     id: 'david-park',
@@ -274,6 +283,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 2 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 240000,
   },
   {
     id: 'maria-santos',
@@ -301,6 +311,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 3 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 190000,
   },
   {
     id: 'james-wright',
@@ -328,6 +339,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 2 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 200000,
   },
   {
     id: 'amy-chen',
@@ -355,6 +367,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 1 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 160000,
   },
 
   // === CENTRIST (-19 to +19) - 7 personas ===
@@ -384,6 +397,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 3 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 350000,
   },
   {
     id: 'jennifer-adams',
@@ -411,6 +425,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 3 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 380000,
   },
   {
     id: 'carlos-rivera',
@@ -438,6 +453,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 3 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 320000,
   },
   {
     id: 'helen-kowalski',
@@ -465,6 +481,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 3 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 280000,
   },
   {
     id: 'kevin-thompson',
@@ -492,6 +509,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 2 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 340000,
   },
   {
     id: 'susan-kim',
@@ -519,6 +537,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 2 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 300000,
   },
   {
     id: 'anthony-russo',
@@ -546,6 +565,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 2 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 290000,
   },
 
   // === CENTER-RIGHT (+20 to +79) - 6 personas ===
@@ -575,6 +595,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 3 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 180000,
   },
   {
     id: 'nancy-coleman',
@@ -602,6 +623,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 3 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 200000,
   },
   {
     id: 'brian-murphy',
@@ -629,6 +651,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 2 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 240000,
   },
   {
     id: 'linda-fischer',
@@ -656,6 +679,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 2 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 220000,
   },
   {
     id: 'steve-andrews',
@@ -683,6 +707,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 1 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 160000,
   },
   {
     id: 'michelle-dawson',
@@ -710,6 +735,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 3 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 190000,
   },
 
   // === FAR RIGHT (+80 to +100) - 4 personas ===
@@ -739,6 +765,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 1 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 100000,
   },
   {
     id: 'tammy-wilson',
@@ -766,6 +793,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 2 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 90000,
   },
   {
     id: 'rick-turner',
@@ -793,6 +821,7 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 1 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 120000,
   },
   {
     id: 'betty-harris',
@@ -820,5 +849,6 @@ export const initialPersonas: Persona[] = [
     ],
     responseWave: 3 as ResponseWave,
     lastResponseTick: 0,
+    segmentSize: 80000,
   },
 ]

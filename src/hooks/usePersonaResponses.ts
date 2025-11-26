@@ -3,7 +3,8 @@ import { useGameStore } from '../stores/gameStore'
 import { useOpenRouter } from './useOpenRouter'
 import { buildBatchedPersonaResponsePrompt } from '../utils/prompts'
 import { parseBatchedPersonaResponse } from '../utils/responseParser'
-import type { Persona, Post, PostReaction, Issue } from '../types'
+import { calculateAllEngagement, scaleEngagement } from '../utils/engagementCalculator'
+import type { Persona, Post, PostReaction, Issue, PostEngagement } from '../types'
 
 interface PersonaSelectionConfig {
   minResponders: number
@@ -16,8 +17,17 @@ const DEFAULT_CONFIG: PersonaSelectionConfig = {
 }
 
 export function usePersonaResponses() {
-  const { personas, player, loop, addReactionToPost, updatePersonaOpinion, setPersonaLastResponse, setPostProcessing } =
-    useGameStore()
+  const {
+    personas,
+    player,
+    loop,
+    addReactionToPost,
+    updatePersonaOpinion,
+    setPersonaLastResponse,
+    setPostProcessing,
+    updateFollowers,
+    updatePostEngagement,
+  } = useGameStore()
   const { queueRequest } = useOpenRouter()
 
   // Calculate how relevant a post is to a persona based on issue overlap
@@ -46,6 +56,12 @@ export function usePersonaResponses() {
   const selectRespondingPersonas = useCallback(
     (post: Post, config: PersonaSelectionConfig = DEFAULT_CONFIG): Persona[] => {
       const personaArray = Array.from(personas.values())
+
+      // Safety: if no personas loaded, return empty
+      if (personaArray.length === 0) {
+        console.warn('No personas available for selection')
+        return []
+      }
 
       // Calculate response probability for each persona
       const withProbability = personaArray.map((persona) => {
@@ -103,6 +119,15 @@ export function usePersonaResponses() {
         remaining.forEach((item) => selected.push(item.persona))
       }
 
+      // Final safety net: if still below minimum, force-add top personas by probability
+      if (selected.length < config.minResponders && withProbability.length > 0) {
+        const stillNeeded = config.minResponders - selected.length
+        const toForceAdd = withProbability
+          .filter((item) => !selected.includes(item.persona))
+          .slice(0, stillNeeded)
+        toForceAdd.forEach((item) => selected.push(item.persona))
+      }
+
       return selected
     },
     [personas, player, calculateTopicRelevance, calculateFatigue]
@@ -151,7 +176,7 @@ export function usePersonaResponses() {
     async (post: Post) => {
       if (!player) return
 
-      // Select responding personas
+      // Select responding personas (those who will comment)
       const respondingPersonas = selectRespondingPersonas(post)
       const personaIds = respondingPersonas.map(p => p.id)
 
@@ -165,10 +190,10 @@ export function usePersonaResponses() {
         })
 
         if (response.success && response.data) {
-          // Parse batched response into Map<personaId, PersonaLLMResponse>
-          const responseMap = parseBatchedPersonaResponse(response.data, personaIds)
+          // Parse batched response - now returns both responses and postImpact
+          const { responses: responseMap, postImpact } = parseBatchedPersonaResponse(response.data, personaIds)
 
-          // Process each persona's response
+          // Process each commenting persona's response
           respondingPersonas.forEach((persona, index) => {
             const data = responseMap.get(persona.id)
             if (data) {
@@ -196,6 +221,43 @@ export function usePersonaResponses() {
               setPersonaLastResponse(persona.id, loop.currentTick)
             }
           })
+
+          // Calculate engagement from ALL personas (not just commenters)
+          const { likes, retweets, dislikes } = calculateAllEngagement(
+            personas,
+            personaIds, // Exclude those who commented
+            post,
+            player.politicalPosition
+          )
+
+          // Calculate viral multiplier from LLM's assessment
+          const viralMultiplier = 1 + (postImpact.viralPotential / 100)
+
+          // Scale engagement to realistic numbers
+          const scaledLikes = scaleEngagement(likes, personas, viralMultiplier)
+          const scaledRetweets = scaleEngagement(retweets, personas, viralMultiplier)
+          const scaledDislikes = scaleEngagement(dislikes, personas, 1.0) // Dislikes don't go viral
+
+          // Create engagement object
+          const engagement: PostEngagement = {
+            likes: likes.length,
+            retweets: retweets.length,
+            dislikes: dislikes.length,
+            displayedLikes: scaledLikes,
+            displayedRetweets: scaledRetweets,
+            displayedDislikes: scaledDislikes,
+          }
+
+          // Update post with engagement data
+          updatePostEngagement(post.id, engagement)
+
+          // Update followers based on LLM's assessment
+          if (postImpact.estimatedFollowerDelta !== 0) {
+            const reason = `Post: "${post.content.slice(0, 30)}..."`
+            updateFollowers(postImpact.estimatedFollowerDelta, reason)
+          }
+
+          console.log('Engagement calculated:', engagement, 'Follower delta:', postImpact.estimatedFollowerDelta)
         }
       } catch (error) {
         console.error('Batched persona response failed:', error)
@@ -206,6 +268,7 @@ export function usePersonaResponses() {
     },
     [
       player,
+      personas,
       selectRespondingPersonas,
       queueRequest,
       calculateDisplayDelay,
@@ -214,6 +277,8 @@ export function usePersonaResponses() {
       updatePersonaOpinion,
       setPersonaLastResponse,
       setPostProcessing,
+      updatePostEngagement,
+      updateFollowers,
     ]
   )
 
